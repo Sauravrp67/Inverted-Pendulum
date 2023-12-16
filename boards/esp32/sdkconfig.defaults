@@ -1,0 +1,10 @@
+# ESP-IDF defaults for the Arduino-as-component build.
+#
+# AUTOSTART_ARDUINO makes the arduino component provide app_main() and spin up
+# the loopTask that calls our setup()/loop(). FREERTOS_HZ=1000 gives Arduino its
+# expected 1 ms tick (millis/micros/delay behave as on AVR). The larger event
+# task stack avoids overflow with the Arduino + WiFi stacks initialised.
+CONFIG_AUTOSTART_ARDUINO=y
+CONFIG_FREERTOS_HZ=1000
+CONFIG_ESP_SYSTEM_EVENT_TASK_STACK_SIZE=4096
+CONFIG_ARDUINO_LOOP_STACK_SIZE=8192

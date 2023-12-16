@@ -1,0 +1,29 @@
+# Build artifacts
+build/
+*.o
+*.elf
+*.bin
+*.hex
+*.map
+*.lst
+
+# Vendored toolchains / Arduino cores fetched by scripts/install_toolchains.sh
+vendor/
+
+# ESP-IDF generated files (boards/esp32/ project)
+boards/esp32/sdkconfig
+boards/esp32/sdkconfig.old
+boards/esp32/dependencies.lock
+boards/esp32/managed_components/
+
+# Python
+__pycache__/
+*.pyc
+.venv/
+venv/
+
+# Editor / OS
+.vscode/
+.idea/
+*.swp
+.DS_Store
