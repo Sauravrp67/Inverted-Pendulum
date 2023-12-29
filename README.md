@@ -9,6 +9,10 @@ STM32 Blue Pill**, using hand-written Makefiles over the raw toolchains
 (`avr-gcc`, `xtensa-esp32-elf`, `arm-none-eabi-gcc`) and flashing via
 `avrdude` / `esptool` / **OpenOCD**.
 
+## Demo
+
+[Watch the demo video](https://www.youtube.com/watch?v=VB0A7SY6zuw)
+
 ## Layout
 
 ```
