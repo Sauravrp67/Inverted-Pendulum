@@ -1,0 +1,78 @@
+# SI units. Hardware defaults are starting assumptions, not measurements.
+common:
+  sample_s: 0.01 # controller runs every 10 ms
+  # Lengths in metres, mass in kg. rod is the pendulum. 
+  plant:
+    arm_length: 0.2
+    rod_length: 0.3
+    rod_mass: 0.1
+    arm_inertia: 0.005
+    gravity: 9.81
+    arm_damping: 0.008
+    hinge_damping: 0.0007
+
+  encoder_counts: [4096, 1440] # [arm, rod], counts per turn after quadrature decoding
+  
+  stepper:
+    steps_per_turn: 1600 # include microstepping and any gearing here
+    max_steps_s: 4000 # pulse rate limit
+    stiffness_Nm_rad: 16
+    damping_Nm_s_rad: 0.48
+ 
+  # kalman filter model uncertainty per sample. These are variances, not sd.
+  # order -> arm relative to motor field, rod tilt, arm speed, rod speed.
+  process_variances: [1e-8, 1e-8, 0.0005, 0.001]
+  
+  hardware_model:
+    encoder_sd_rad: 0.0005 # angle noise std dev in radians
+
+  swing:
+    enabled: true # permits swing-up on hardware. doesn't start the motor at boot
+    speed_rad_s: 2.5 # speed scale for the energy pump
+    energy_reserve_J: 0.04 # aim a bit above the energy needed for upright
+    energy_band_J: 0.05 # larger value makes the change in pumping effort gentler
+    phase_lead_s: 0.03 # use current rod speed to look this far ahead
+    centring_per_s: 0.4 # pull the arm back towards home during swing-up
+    kick_rad_s: 2 # initial movement to get out of hanging rest
+    kick_s: 0.17 # duration of that kick
+    # Hand over to balance only when tilt AND both speeds are inside these limits.
+    capture_rad: 0.16
+    capture_rate: 2.5
+    capture_arm_rate: 4
+    exit_rad: 0.7 # call it a fall beyond this tilt after capture; no automatic retry
+    rate_filter_s: 0.02 # smooth the encoder-derived speeds during swing-up
+
+  scenarios:
+    pendulum-arm-regulation:
+      arm_target_rad: 0.29670597283903605 # 17 degrees
+    pendulum-regulation:
+      arm_target_rad: null # no arm position target, not a target of zero
+
+simulation:
+  # These losses and noise values are assumptions, not fitted hardware measurements.
+  stepper:
+    updates_per_sample: 8 # update the motor model 8 times per controller sample
+  hardware_model:
+    seed: 42 # same seed and trial_id reproduce the same noise draws
+    motor_noise_sd_Nm: 0.0015
+    hinge_dry_Nm: 0.0002
+    friction_smoothing_rad_s: 0.1 # smooth out dry friction around zero speed
+    drag_Nm_s2_rad2: 0.000002
+  # [arm angle, rod tilt from upright, arm speed, rod speed], rad and rad/s.
+  initial: [0, 3.141592653589793, 0, 0] # hanging, both joints at rest
+  balance_initial: [0, 0.03, 0, 0] # used instead when swing.enabled is false
+  duration: 20
+  substeps: 4 # Drake integration steps per motor update
+  limit_Nm: 0.65 # simulated motor torque clamp
+  # External push on the rod hinge. The controller isn't told about it.
+  push:
+    start_s: 12
+    duration_s: 0.1
+    hinge_Nm: 0.06
+
+empirical:
+  # Override common values here after measuring the real mechanism.
+  swing:
+    timeout_s: 8 # stop if swing-up hasn't caught the rod by then
+  direction: {arm: 1, pole: 1, motor: 1} # flip a sign if wiring reverses that direction
+  travel_stop_rad: 1.5 # stop threshold on either side of home; check your actual clearance
