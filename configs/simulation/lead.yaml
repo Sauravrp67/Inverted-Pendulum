@@ -1,0 +1,22 @@
+# Settings for the Drake demo.
+import: ../base.yaml # shared plant, sensors and swing-up settings
+controller: lead
+
+# Lead output changes the step rate; the controller integrates it into a speed command.
+lead:
+  gain: 22000
+  zero_s: 0.16 # zero time constant, seconds
+  pole_s: 0.02 # pole time constant, seconds
+
+scenarios:
+  pendulum-arm-regulation:
+    outer_gains: [0.012, 0.016] # arm position and speed gains; these set a small tilt target
+    tilt_ref_limit_rad: 0.12 # don't ask the rod to lean further than this
+    trial_id: 1 # selects this run's noise stream; use matching IDs for matched noise
+  pendulum-regulation:
+    # Oppose sustained commanded rotation, without asking for an arm position.
+    pulse_trim:
+      filter_s: 0.2
+      lean_s: 0.025
+      limit_rad: 0.04
+    trial_id: 5 # selects this run's noise stream; use matching IDs for matched noise
