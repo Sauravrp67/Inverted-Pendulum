@@ -35,13 +35,18 @@ void loop() {
   // Check if the encoder position has changed
   static long lastCounter = 0;
   if (counter != lastCounter) {
-    
-    Serial.println(counter);
-    Serial.println(angle);
+  
     lastCounter = counter;
+    angle = counter * 12;
+    Serial.print("Counter: ");
+    Serial.println(counter);
+    Serial.print("Angle: ");
+    Serial.println(angle);
+
+    stepper.moveTo(counter * 100);
     
   }
-
+  stepper.run();
   // Run the stepper motor
   
 }
@@ -72,4 +77,6 @@ void readEncoder() {
 
 void reset_counter() {
   counter = 0;
+
+  stepper.setCurrentPosition(0);
 }

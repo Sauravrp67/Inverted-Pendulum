@@ -10,7 +10,7 @@
 #define ENC_B 3
 
 // PID parameters
-float Kp = 1.0;
+float Kp = 10.0;
 float Ki = 0.1;
 float Kd = 0.01;
 float max_integral = 100; // Limit for integral term to prevent windup
@@ -31,7 +31,7 @@ volatile long target_position = 0;
 void setup() {
     // maximum speed and acceleration for the stepper motor
     stepper.setMaxSpeed(2000); 
-    stepper.setAcceleration(2000); 
+    stepper.setAcceleration(87500); 
 
     
     Serial.begin(115200);
@@ -69,12 +69,17 @@ void loop() {
         previous_error = error;
 
         // Convert PID output to stepper motor steps
-        if (output != 0) {
-            long target_position = stepper.currentPosition() + output;
+        if (output != 0.0) {
+            long target_position = stepper.currentPosition() + (long)output;
             if (abs(target_position - stepper.currentPosition()) > DEADBAND) {
                 stepper.moveTo(target_position);
             }
         }
+        //    if (abs(output) > DEADBAND) {
+        //     target_position = stepper.currentPosition() + (long)output;
+        //     stepper.moveTo(target_position);
+        // }
+
 
         // Print values once per second
         if (now - last_print_time >= 1000) {
@@ -122,4 +127,6 @@ void reset_counter() {
     counter = 0;
     integral = 0;
     previous_error = 0;
+    stepper.setCurrentPosition(0);
+    stepper.runToPosition();
 }

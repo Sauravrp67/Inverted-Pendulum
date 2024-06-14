@@ -4,13 +4,15 @@
 #define ENC_B 3
 #define SW_Pin 18
 
+
+
 unsigned long _lastIncReadTime = micros(); 
 unsigned long _lastDecReadTime = micros(); 
 int _pauseLength = 25000;
 int _fastIncrement = 10;
 
 volatile int counter = 0;
-
+volatile int angle = 0;
 void setup() {
 
   // Set encoder pins and attach interrupts
@@ -30,9 +32,19 @@ void loop() {
 
   // If count has changed print the new value to serial
   if(counter != lastCounter){
-    Serial.println(counter);
+    
     lastCounter = counter;
+    angle = counter * 12;
+    Serial.print("Counter: ");
+    Serial.println(counter);
+    Serial.print("Angle: ");
+    Serial.println(angle);
+
+    stepper.moveTo(counter * 100);
+
   }
+
+  stepper.run();
 }
 
 void read_encoder() {
@@ -75,5 +87,6 @@ void read_encoder() {
 void reset_counter() {
   
   counter = 0;
+  stepper.setCurrentPosition(0);
 
 }
