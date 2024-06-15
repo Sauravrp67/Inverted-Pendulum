@@ -3,7 +3,7 @@
 #define ENC_Z 18 // Encoder zero position
 
 volatile long pulse_count = 0;
-const float pulses_per_revolution = 1440; // Encoder resolution
+const float pulses_per_revolution = 1440.0; // Encoder resolution
 volatile float angle = 0.0; // Angular position
 volatile float last_angle = 0.0; // Previous angular position
 
@@ -86,6 +86,6 @@ void readEncoderB() {
 }
 
 void resetPosition() {
- // Reset pulse count on zero position
+  pulse_count = 0; // Reset pulse count on zero position
   angle = 0.0; // Reset the angle to zero
 }

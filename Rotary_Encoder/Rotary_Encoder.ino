@@ -1,92 +1,76 @@
+#include <Arduino.h>
 
 // Define rotary encoder pins
-#define ENC_A 2
-#define ENC_B 3
-#define SW_Pin 18
+#define ENC_A 2 // Encoder output A
+#define ENC_B 3 // Encoder output B
+#define ENC_Z 4 // Encoder zero position
 
+volatile long pulse_count = 0;
+const float transitions_per_revolution = 1440.0; // Encoder transitions per revolution
+volatile float angle = 0.0; // Angular position
 
-
-unsigned long _lastIncReadTime = micros(); 
-unsigned long _lastDecReadTime = micros(); 
-int _pauseLength = 25000;
-int _fastIncrement = 10;
-
-volatile int counter = 0;
-volatile int angle = 0;
 void setup() {
-
   // Set encoder pins and attach interrupts
   pinMode(ENC_A, INPUT_PULLUP);
   pinMode(ENC_B, INPUT_PULLUP);
-  pinMode(SW_Pin, INPUT_PULLUP);
-  attachInterrupt(digitalPinToInterrupt(ENC_A), read_encoder, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(ENC_B), read_encoder, CHANGE);
-  attachInterrupt(digitalPinToInterrupt(SW_Pin),reset_counter, LOW);
+  pinMode(ENC_Z, INPUT_PULLUP);
+  attachInterrupt(digitalPinToInterrupt(ENC_A), readEncoder, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ENC_B), readEncoder, CHANGE);
+  attachInterrupt(digitalPinToInterrupt(ENC_Z), resetPosition, FALLING);
 
   // Start the serial monitor to show output
   Serial.begin(115200);
+
+  // Print initial values
+  Serial.println("Encoder initialized.");
 }
 
 void loop() {
-  static int lastCounter = 0;
+  static long lastCounter = 0;
 
-  // If count has changed print the new value to serial
-  if(counter != lastCounter){
-    
-    lastCounter = counter;
-    angle = counter * 12;
+  // If count has changed, print the new value to serial
+  if (pulse_count != lastCounter) {
+    lastCounter = pulse_count;
     Serial.print("Counter: ");
-    Serial.println(counter);
+    Serial.println(pulse_count);
     Serial.print("Angle: ");
     Serial.println(angle);
-
-    stepper.moveTo(counter * 100);
-
   }
 
-  stepper.run();
+  // Small delay for stability
+  delay(10);
 }
 
-void read_encoder() {
+void readEncoder() {
   // Encoder interrupt routine for both pins. Updates counter
   // if they are valid and have rotated a full indent
- 
-  static uint8_t old_AB = 3;  // Lookup table index
-  static int8_t encval = 0;   // Encoder value  
-  static const int8_t enc_states[]  = {0,-1,1,0,1,0,0,-1,-1,0,0,1,0,1,-1,0}; // Lookup table
+  static uint8_t old_AB = 0;  // Lookup table index
+  static int8_t encval = 0;   // Encoder value
+  static const int8_t enc_states[] = {0, -1, 1, 0, 1, 0, 0, -1, -1, 0, 0, 1, 0, 1, -1, 0}; // Lookup table
 
-  old_AB <<=2;  // Remember previous state
+  old_AB <<= 2;  // Remember previous state
 
   if (digitalRead(ENC_A)) old_AB |= 0x02; // Add current state of pin A
   if (digitalRead(ENC_B)) old_AB |= 0x01; // Add current state of pin B
   
-  encval += enc_states[( old_AB & 0x0f )];
+  encval += enc_states[(old_AB & 0x0f)];
 
   // Update counter if encoder has rotated a full indent, that is at least 4 steps
-  if( encval > 1 ) {        // Four steps forward
-    int changevalue = 1;
-    // if((micros() - _lastIncReadTime) < _pauseLength) {
-    //   changevalue = _fastIncrement * changevalue; 
-    // }
-    // _lastIncReadTime = micros();
-    counter = counter + changevalue;              // Update counter
+  if (encval > 3) {        // Four steps forward
+    pulse_count++;
     encval = 0;
   }
-  else if( encval < -1 ) {        // Four steps backward
-    int changevalue = -1;
-    // if((micros() - _lastDecReadTime) < _pauseLength) {
-    //   changevalue = _fastIncrement * changevalue; 
-    // }
-    // _lastDecReadTime = micros();
-    counter = counter + changevalue;              // Update counter
+  else if (encval < -3) {        // Four steps backward
+    pulse_count--;
     encval = 0;
   }
-} 
 
+  // Update the angle
+  angle = (float(pulse_count) / transitions_per_revolution) * 360.0;
+}
 
-void reset_counter() {
-  
-  counter = 0;
-  stepper.setCurrentPosition(0);
-
+void resetPosition() {
+  pulse_count = 0; // Reset pulse count on zero position
+  angle = 0.0; // Reset the angle to zero
+  Serial.println("Z pulse detected, counter and angle reset.");
 }

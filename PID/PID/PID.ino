@@ -72,8 +72,15 @@ void loop() {
         if (output != 0.0) {
             long target_position = stepper.currentPosition() + (long)output;
             if (abs(target_position - stepper.currentPosition()) > DEADBAND) {
-                stepper.moveTo(target_position);
-            }
+                if (angle > set_point) {
+                  target_position  = target_position;
+                }
+                else if (angle < set_point){
+                  target_position = -1 * target_position;
+                }   
+                  stepper.moveTo(target_position);
+                         
+                }
         }
         //    if (abs(output) > DEADBAND) {
         //     target_position = stepper.currentPosition() + (long)output;
