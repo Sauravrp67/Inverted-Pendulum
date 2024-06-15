@@ -1,0 +1,21 @@
+# Starting values for the board, still need tuning on hardware.
+import: ../base.yaml # shared plant, sensors and swing-up settings
+controller: pid
+
+# Gains take tilt in radians and produce steps/s. Don't use torque-controller gains here.
+pid:
+  kp: 5500
+  ki: 40000
+  kd: 130
+  derivative_time_s: 0.02 # derivative filter; larger means smoother but slower
+
+scenarios:
+  pendulum-arm-regulation:
+    outer_gains: [0.012, 0.016] # arm position and speed gains; these set a small tilt target
+    tilt_ref_limit_rad: 0.12 # don't ask the rod to lean further than this
+  pendulum-regulation:
+    # Oppose sustained commanded rotation, without asking for an arm position.
+    pulse_trim:
+      filter_s: 0.2
+      lean_s: 0.025
+      limit_rad: 0.04

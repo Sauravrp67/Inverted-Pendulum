@@ -1,0 +1,12 @@
+# Starting values for the board, still need tuning on hardware.
+import: ../base.yaml # shared plant, sensors and swing-up settings
+controller: lqr
+
+rate_weight: 0.12 # cost on commanded field speed, not on torque
+
+# State weight order: arm angle, rod tilt, arm speed, rod speed, field minus arm angle.
+scenarios:
+  pendulum-arm-regulation:
+    state_weights: [3, 60, 0.08, 1, 0.2]
+  pendulum-regulation:
+    state_weights: [0, 60, 0, 1, 0.2] # arm angle and arm speed aren't penalised here
