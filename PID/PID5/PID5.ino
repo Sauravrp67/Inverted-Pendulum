@@ -7,15 +7,16 @@
 // Define rotary encoder pins
 #define ENC_A 2 // Encoder output A
 #define ENC_B 3 // Encoder output B
+// #define OUTPUT_LIMIT 1000
 
 // PID parameters
-float Kp = 1;  // Proportional gain
-float Ki = 0.0;  // Integral gain
-float Kd = 0;   // Derivative gain
+float Kp = 1.2; // Proportional gain
+float Ki = 0.11; // Integral gain
+float Kd = 0.006; // Derivative gain
 float max_integral = 1000; // Limit for integral term to prevent windup
 
 // Deadband values
-#define DEADBAND 2
+#define DEADBAND 5
 #define SAFETY_LIMIT 500
 
 // Encoder and PID control variables
@@ -61,14 +62,23 @@ void setup() {
 }
 
 void loop() {
+  // Handle serial input for reset command
+  if (Serial.available() > 0) {
+    String command = Serial.readStringUntil('\n');
+    if (command == "reset") {
+      resetValues();
+      Serial.println("Values have been reset.");
+    }
+  }
+
   // PID control loop
   unsigned long now = micros();
   float time_change = (now - last_time) / 1000.0;
 
-  if(time_change >= 0.01) {
+  if (time_change >= 0.01) {
     last_time = now;
     error = setpoint - angle; // Calculate error
-    if (abs(error) > DEADBAND){
+
     integral += error * time_change;
     // Integral windup prevention
     if (integral > max_integral) integral = max_integral;
@@ -76,16 +86,24 @@ void loop() {
 
     derivative = (error - previous_error) / time_change;
     output = Kp * error + Ki * integral + Kd * derivative;
+
+    // if (output > OUTPUT_LIMIT) {
+    //   output = OUTPUT_LIMIT;
+    // }
+
+    // if (output < -OUTPUT_LIMIT) {
+    //   output = -OUTPUT_LIMIT;
+    // }
+
     previous_error = error;
 
     // Convert PID output to stepper motor steps
-    stepper.setSpeed(output);
+    stepper.setSpeed(16 * output);
     stepper.runSpeed();
-    }
   }
 
   // Print values once per second
-  if (now - last_print_time >= 1000) { // 1 second in microseconds
+  if (now - last_print_time >= 1000000) { // 1 second in microseconds
     last_print_time = now;
     Serial.print("Angle: ");
     Serial.print(angle);
@@ -98,12 +116,22 @@ void loop() {
     Serial.print(" Output: ");
     Serial.print(output);
     Serial.print(" Kp: ");
-    Serial.print(Kp);
+    Serial.print(Kp,3);
     Serial.print(" Ki: ");
-    Serial.print(Ki);
+    Serial.print(Ki,3);
     Serial.print(" Kd: ");
-    Serial.println(Kd);
+    Serial.println(Kd,4);
   }
+}
+
+void resetValues() {
+  noInterrupts(); // Disable interrupts while resetting values
+  pulse_count = 0;
+  angle = 0.0;
+  error = 0.0;
+  previous_error = 0.0;
+  output = 0.0;
+  interrupts(); // Re-enable interrupts after resetting values
 }
 
 void readEncoderA() {
@@ -126,7 +154,7 @@ void readEncoderA() {
     }
   }
   // Update the angle
-  angle = (pulse_count / pulses_per_revolution) * 360.0;
+  angle = ((pulse_count / pulses_per_revolution) * 360.0);
 }
 
 void readEncoderB() {
@@ -150,8 +178,4 @@ void readEncoderB() {
   }
   // Update the angle
   angle = ((pulse_count / pulses_per_revolution) * 360.0);
-}
-
-void beginIntegralCalculation() {
-  start_integral = true;
 }

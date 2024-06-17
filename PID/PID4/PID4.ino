@@ -7,11 +7,11 @@
 // Define rotary encoder pins
 #define ENC_A 2 // Encoder output A
 #define ENC_B 3 // Encoder output B
-
+#define OUTPUT_LIMIT 100
 // PID parameters
-float Kp = 4.3;  // Proportional gain
-float Ki = 0.1;  // Integral gain
-float Kd = 0;   // Derivative gain
+float Kp = 1;  // Proportional gain
+float Ki = 0.0;  // Integral gain
+float Kd = 0.0;   // Derivative gain
 float max_integral = 1000; // Limit for integral term to prevent windup
 
 // Deadband values
@@ -64,11 +64,11 @@ void loop() {
   // PID control loop
   unsigned long now = micros();
   float time_change = (now - last_time) / 1000.0;
-
+  
   if(time_change >= 0.01) {
     last_time = now;
     error = setpoint - angle; // Calculate error
-
+    
     integral += error * time_change;
     // Integral windup prevention
     if (integral > max_integral) integral = max_integral;
@@ -76,15 +76,26 @@ void loop() {
 
     derivative = (error - previous_error) / time_change;
     output = Kp * error + Ki * integral + Kd * derivative;
+
+    if(output > OUTPUT_LIMIT) {
+      output = OUTPUT_LIMIT;
+    }
+
+    if (output < -OUTPUT_LIMIT) {
+      output = -OUTPUT_LIMIT;
+    }
+
+    
     previous_error = error;
 
     // Convert PID output to stepper motor steps
     stepper.setSpeed(output);
     stepper.runSpeed();
   }
+  
 
   // Print values once per second
-  if (now - last_print_time >= 1000000) { // 1 second in microseconds
+  if (now - last_print_time >= 100) { // 1 second in microseconds
     last_print_time = now;
     Serial.print("Angle: ");
     Serial.print(angle);
