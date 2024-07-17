@@ -2,7 +2,7 @@ name: Drake simulation
 on: [push, pull_request]
 jobs:
   host:
-    runs-on: ubuntu-24.04
+    runs-on: ubuntu-22.04
     env:
       OPENBLAS_NUM_THREADS: "1"
     strategy:
