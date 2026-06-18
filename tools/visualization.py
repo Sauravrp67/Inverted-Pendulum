@@ -1,11 +1,34 @@
-import serial
+"""Real-time PID telemetry plotter for the inverted-pendulum firmware.
+
+Reads the 1 Hz telemetry line emitted by src/main.cpp:
+
+    Angle: a Error: e Integral: i Derivative: d Output: o Kp: .. Ki: .. Kd: ..
+
+and live-plots angle, output, and error. The token layout is a contract with
+the firmware; keep them in sync.
+
+Usage:
+    python tools/visualization.py --port /dev/ttyUSB0       # Linux/Mac
+    python tools/visualization.py --port COM5 --baud 115200  # Windows
+"""
+import argparse
 import time
+
+import serial
 import matplotlib.pyplot as plt
 import matplotlib.animation as animation
 from matplotlib.ticker import MaxNLocator
 
+parser = argparse.ArgumentParser(description=__doc__,
+                                 formatter_class=argparse.RawDescriptionHelpFormatter)
+parser.add_argument('--port', '-p', required=True,
+                    help="Serial port (e.g. /dev/ttyUSB0, /dev/ttyACM0, COM5)")
+parser.add_argument('--baud', '-b', type=int, default=115200,
+                    help="Baud rate (must match SERIAL_BAUD; default 115200)")
+args = parser.parse_args()
+
 # Set up the serial port connection
-ser = serial.Serial('COM5', 115200)  # Replace 'COM5' with your Arduino's serial port
+ser = serial.Serial(args.port, args.baud)
 
 # Initialize lists to store time, angle, and PID values
 times = []
